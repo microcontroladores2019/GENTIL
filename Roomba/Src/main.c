@@ -83,6 +83,7 @@ int Limpa_TimeUp = 0;
 int Limpa_TimeFull = 1;
 int Limpa_Up = 0;
 int Limpa_DutyCycle = 0;
+int Limpa = 0;
 //Variaveis globais para medir o sinal de START
 int START_TimeUp = 0;
 int START_TimeFull = 1;
@@ -118,6 +119,10 @@ int main(void)
   MX_TIM3_Init();
   MX_USART1_Init();
   /* USER CODE BEGIN 2 */
+  HAL_USART_Transmit(husart1, 0x80,0,0);//manda o comando start para o roomba iniciando o SCI
+
+  /*SINCERAMENTE EU NAO SEI SE ESSA FORMA DE MANDAR COMANDOS SERIAIS VAI FUNCIONAR
+   * MAS PELOMENOS OS VALORES A SEREM MANDADOS ESTÃO CERTOS AO LONGO DO CÓDIGO */
 
   /* USER CODE END 2 */
 

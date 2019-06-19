@@ -56,12 +56,22 @@ extern int Limpa_TimeUp;
 extern int Limpa_TimeFull;
 extern int Limpa_Up;
 extern int Limpa_DutyCycle;
+extern int Limpa;
 
 extern int START_TimeUp;
 extern int START_TimeFull;
 extern int START_Up;
 extern int START_DutyCycle;
 extern int START;
+
+/*variaveis de velocidade e de rotacao*/
+int velocidade = 0;
+int rotacao = 0;
+int velocidade_H = 0;
+int velocidade_L = 0;
+int rotacao_H = 0;
+int rotacao_L = 0;
+
 
 
 /* USER CODE END PV */
@@ -233,6 +243,11 @@ void EXTI1_IRQHandler(void)
 	}else{
 		START_Up = 0;
 	}
+	if(START_DutyCycle > 35){
+		START = 1;
+	}else{
+		START = 0;
+	}
   /* USER CODE END EXTI1_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
@@ -254,6 +269,11 @@ void EXTI2_IRQHandler(void)
 		Limpa_Up = 1;
 	}else{
 		Limpa_Up = 0;
+	}
+	if(Limpa_DutyCycle > 35){
+		Limpa = 1;
+	}else{
+		Limpa = 0;
 	}
   /* USER CODE END EXTI2_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
@@ -279,8 +299,40 @@ void TIM3_IRQHandler(void)
 	if(Limpa_Up)Limpa_TimeUp++;
 	if(START_Up)START_TimeUp++;
 
-	/*Fluxo do programa*/
-
+	/*FLUXO DO PROGRAMA*/
+	if(START){
+		HAL_USART_Transmit(husart1,0x82,0,0);//comando contorl do Roomba
+		if(START){
+			HAL_USART_Transmit(husart1,0x8A,0,0);//opcode do comando motors comand
+			if(Limpa){
+				HAL_USART_Transmit(husart1,0x07,0,0);//liga os motores de limpesa
+			}else{
+				HAL_USART_Transmit(husart1,0x00,0,0);//desliga os motores de limpesa
+			}
+			/*conversao dutycycle para binario */
+			velocidade = ((Velo_DutyCycle-30)/20)*1000 - 500;
+			rotacao = ((Rota_DutyCycle-30)/20)*4000 - 2000;
+			velocidade_L = velocidade % 256;
+			rotacao_L = rotacao % 256;
+			velocidade_H = velocidade % 4096;
+			rotacao_H = rotacao % 4096;
+			if(velocidade < 0){
+				velocidade_H = velocidade_H + 240;
+			}
+			if(rotacao < 0){
+				rotacao_H = rotacao_H + 240;
+			}
+			HAL_USART_Transmit(husart1,137,0,0); //comando drive do Roomba
+			/*envia a velocidade linear*/
+			HAL_USART_Transmit(husart1,velocidade_H,0,0);
+			HAL_USART_Transmit(husart1,velocidade_L,0,0);
+			/*envia a rotação*/
+			HAL_USART_Transmit(husart1,rotacao_H,0,0);
+			HAL_USART_Transmit(husart1,rotacao_L,0,0);
+		}else{
+			HAL_USART_Transmit(husart1,0x85,0,0);//comando power do Roomba
+		}
+	}
 
   /* USER CODE END TIM3_IRQn 0 */
   HAL_TIM_IRQHandler(&htim3);
